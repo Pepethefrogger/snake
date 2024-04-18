@@ -44,7 +44,7 @@ func request(url string,channels Channels,options argparse.Options) { //Makes on
 		fmt.Println(url,resp.Status);
 		body, err := io.ReadAll(resp.Body);
 		if err!=nil {
-			return;
+			body=[]byte("");
 		}
 		channels.ResponseChannel<-[]string{url,string(body)}
 	}
@@ -75,11 +75,13 @@ func RequestHandler(channels Channels,options argparse.Options) { //Controls lau
 }
 
 
-func ResponseParser(url string,domain string,channels Channels,options argparse.Options) {
+func ResponseParser(url string,domain string,channels Channels,options argparse.Options) []string {
 	var visited []string;
+	var validUrls []string;
 	visited = append(visited, url)
 	for array := range(channels.ResponseChannel) {
 		url := array[0];
+		validUrls = append(validUrls, url)
 		parse := array[1];
 		r1, _ := regexp.Compile(fmt.Sprintf("(https?://.*?%s.*?)[\" ']",domain));
 		r2, _ := regexp.Compile("href=\"(/?[^(http)].*?)[\" ']|src=\"(/?[^(http)].*?)[\" ']");
@@ -119,4 +121,5 @@ func ResponseParser(url string,domain string,channels Channels,options argparse.
 			}
 		}
 	}
+	return validUrls;
 }

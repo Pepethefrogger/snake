@@ -1,4 +1,4 @@
-package main
+package formatter
 
 import (
 	"fmt"
@@ -12,7 +12,7 @@ type webpage struct {
 	children []webpage;
 }
 
-func format(array []string) {
+func Format(array []string) {
 	r,err := regexp.Compile("https?://(.*)$");
 	if err!=nil {
 		panic("Error");
