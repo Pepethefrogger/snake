@@ -12,6 +12,9 @@ import (
 func main(){
 	args := os.Args;
 	options := argparse.ParseArgs(args);
+	if options.Banner {
+		argparse.Banner();
+	}
 	if options.Error!=nil||options.FilterCode==nil {
 		argparse.Usage();
 		return;
@@ -23,7 +26,7 @@ func main(){
 		return;
 	}
 	domain := r.FindStringSubmatch(url)[1];
-	fmt.Printf("[*] Searching in domain %s.\n",domain)
+	fmt.Fprintf(os.Stderr,"[*] Searching in domain %s.\n",domain)
 
 	channels := crawler.NewChannels();
 	go func() {
@@ -31,6 +34,9 @@ func main(){
 	}()
 	go crawler.RequestHandler(channels,options);
 	validUrls := crawler.ResponseParser(url,domain,channels,options);
-	formatter.Format(validUrls);
+	if options.Pretty {
+		fmt.Fprint(os.Stderr,"\nFormatted output:\n\n");
+		formatter.Format(validUrls);
+	}
 	channels.Close();
 }

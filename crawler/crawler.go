@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"os"
 	"regexp"
 	"slices"
 	"snake/argparse"
@@ -41,12 +42,16 @@ func request(url string,channels Channels,options argparse.Options) { //Makes on
 		return;
 	}
 	if (!options.FilterCode.Match([]byte(resp.Status))) {
-		fmt.Println(url,resp.Status);
 		body, err := io.ReadAll(resp.Body);
 		if err!=nil {
 			body=[]byte("");
 		}
-		channels.ResponseChannel<-[]string{url,string(body)}
+		channels.ResponseChannel<-[]string{url,string(body),resp.Status}
+		if options.Verbose&&options.Pretty {
+			fmt.Fprint(os.Stderr,url+"  ("+resp.Status+")\n");
+		} else if options.Verbose {
+			fmt.Println(url+"   ("+resp.Status+")");
+		}
 	}
 }
 
@@ -75,13 +80,18 @@ func RequestHandler(channels Channels,options argparse.Options) { //Controls lau
 }
 
 
-func ResponseParser(url string,domain string,channels Channels,options argparse.Options) []string {
+func ResponseParser(url string,domain string,channels Channels,options argparse.Options) [][]string {
 	var visited []string;
-	var validUrls []string;
+	var validUrls [][]string;
 	visited = append(visited, url)
 	for array := range(channels.ResponseChannel) {
 		url := array[0];
-		validUrls = append(validUrls, url)
+		if options.Pretty&&options.StatusCode {
+			sc := array[2];
+			validUrls = append(validUrls, []string{url,sc});
+		} else {
+			validUrls = append(validUrls, []string{url,""});
+		}
 		parse := array[1];
 		r1, _ := regexp.Compile(fmt.Sprintf("(https?://.*?%s.*?)[\" ']",domain));
 		r2, _ := regexp.Compile("href=\"(/?[^(http)].*?)[\" ']|src=\"(/?[^(http)].*?)[\" ']");
